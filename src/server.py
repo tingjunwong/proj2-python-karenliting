@@ -2,6 +2,8 @@ from xmlrpc.server import SimpleXMLRPCServer
 from xmlrpc.server import SimpleXMLRPCRequestHandler
 from socketserver import ThreadingMixIn
 
+dict FileInfoMap = {}
+
 class RequestHandler(SimpleXMLRPCRequestHandler):
     rpc_paths = ('/RPC2',)
 
@@ -30,11 +32,12 @@ def putblock(b):
     return True
 
 # Given a list of blocks, return the subset that are on this server
-def hasblocks(blocklist):
+def hasblocks(client_hashlist):
     """Determines which blocks are on this server"""
     print("HasBlocks()")
-
-    return blocklist
+    server_hashlist = FileInfoMap.keys()
+    list intersection_list = [value for value in client_hashlist if value in server_hashlist] 
+    return intersection_list
 
 # Retrieves the server's FileInfoMap
 def getfileinfomap():
@@ -58,12 +61,27 @@ def getfileinfomap():
 
     return result
 
+
 # Update a file's fileinfo entry
-def updatefile(filename, version, blocklist):
+def updatefile(filename, version, hashlist):
     """Updates a file's fileinfo entry"""
     print("UpdateFile()")
 
+    # search filename
+    # if(version > 1)
+        # update version
+        # update hashlist
+
+    # else(version = 1)
+        # add to map with version 1
+        # update hashlist
+
     return True
+
+
+
+
+
 
 # PROJECT 3 APIs below
 
