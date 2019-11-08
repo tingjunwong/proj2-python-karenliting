@@ -1,5 +1,6 @@
 import argparse
 import xmlrpc.client
+import os
 
 if __name__ == "__main__":
 
@@ -10,10 +11,34 @@ if __name__ == "__main__":
 	args = parser.parse_args()
 
 	try:
+		metadatapath = args.basedir+"/index.txt"
+		hostport = args.hostport
+		blocksize = args.blocksize
 		client  = xmlrpc.client.ServerProxy('http://localhost:8080')
 		# Test ping
 		client.surfstore.ping()
 		print("Ping() successful")
+		# read index.txt
+		hashlist = []
+		if os.path.isfile(metadatapath):#if index.txt exist
+			with open(metadatapath) as f:
+		    for line in f:
+		    	fileinfo = line.split()
+		    	filename = fileinfo[0]
+		    	version = fileinfo[1]
+		    	for i in range(2,len(fileinfo)):
+		    		hashlist.append(fileinfo[i])
+
+		        print(":"+line.rstrip('\n'))
+		    print("fileinfo:"+fileinfo)
+		    print("version:"+version)
+		    print("hashlist:")
+		    print(hashlist)
+		        
+		else:#if not exist create
+			f = open(metadatapath,"w+")
+			f.write("filename v h1")
+
 
 	except Exception as e:
 		print("Client: " + str(e))
