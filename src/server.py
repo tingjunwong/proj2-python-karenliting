@@ -2,7 +2,7 @@ from xmlrpc.server import SimpleXMLRPCServer
 from xmlrpc.server import SimpleXMLRPCRequestHandler
 from socketserver import ThreadingMixIn
 
-dict FileInfoMap = {}
+FileInfoMap = dict()
 
 class RequestHandler(SimpleXMLRPCRequestHandler):
     rpc_paths = ('/RPC2',)
@@ -28,7 +28,6 @@ def getblock(h):
 def putblock(b):
     """Puts a block"""
     print("PutBlock()")
-
     return True
 
 # Given a list of blocks, return the subset that are on this server
@@ -36,8 +35,11 @@ def hasblocks(client_hashlist):
     """Determines which blocks are on this server"""
     print("HasBlocks()")
     server_hashlist = FileInfoMap.keys()
-    list intersection_list = [value for value in client_hashlist if value in server_hashlist] 
-    return intersection_list
+    print(type(server_hashlist))
+    return 1
+    # list intersection_list = [value for value in client_hashlist if value in server_hashlist]
+    # return intersection_list
+
 
 # Retrieves the server's FileInfoMap
 def getfileinfomap():
@@ -48,7 +50,7 @@ def getfileinfomap():
 
     # file1.dat
     file1info = []
-    file1info.append(3) // version
+    file1info.append(3) # version
 
     file1blocks = []
     file1blocks.append("h1")

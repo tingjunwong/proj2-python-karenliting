@@ -1,7 +1,7 @@
 import argparse
 import xmlrpc.client
 import os
-
+import hashlib
 if __name__ == "__main__":
 
 	parser = argparse.ArgumentParser(description="SurfStore client")
@@ -27,25 +27,25 @@ if __name__ == "__main__":
 					fileinfo = line.split()
 					filename = fileinfo[0]
 					version = fileinfo[1]
-                                        for i in range(2,len(fileinfo)):
-                                            hashlist.append(fileinfo[i])
-		    		print(":"+line.rstrip('\n'))
-		    	print("fileinfo:"+fileinfo)
-		    	print("version:"+version)
-		    	print("hashlist:")
-		    	print(hashlist)
+					for i in range(2,len(fileinfo)):
+						hashlist.append(fileinfo[i])
+					print(":"+line.rstrip('\n'))
+				print("fileinfo:"+fileinfo)
+				print("version:"+version)
+				print("hashlist:")
+				print(hashlist)
 		        
 		else:#if not exist create
-		    filelist = os.listdir(basedir)
-		    f = open(metadatapath,"w+")
-		    for file in filelist-"index.txt":
-                        version = 1
-			f.write(file)
-			f.write(" "+version)
-		    	with open(basedir+"/"+file,"rb") as find:
-                            block = find.read(blocksize)
-                            hash_value = hashlib.sha256(block).hexdigest()
-                            f.write(" "+hash_value)
+			filelist = os.listdir(basedir)
+			f = open(metadatapath,"w+")
+			for file in filelist-"index.txt":
+				version = 1
+				f.write(file)
+				f.write(" "+version)
+				with open(basedir+"/"+file,"rb") as find:
+					block = find.read(blocksize)
+					hash_value = hashlib.sha256(block).hexdigest()
+					f.write(" "+hash_value)
 				
 				
 
