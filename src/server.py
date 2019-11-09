@@ -1,8 +1,10 @@
 from xmlrpc.server import SimpleXMLRPCServer
 from xmlrpc.server import SimpleXMLRPCRequestHandler
 from socketserver import ThreadingMixIn
+import hashlib
 
 FileInfoMap = dict()
+Blocks = dict()
 
 class RequestHandler(SimpleXMLRPCRequestHandler):
     rpc_paths = ('/RPC2',)
@@ -20,25 +22,25 @@ def ping():
 def getblock(h):
     """Gets a block"""
     print("GetBlock(" + h + ")")
-
-    blockData = bytes(4)
+    blockData = Blocks[h]
     return blockData
 
 # Puts a block
 def putblock(b):
     """Puts a block"""
     print("PutBlock()")
+    h = hashlib.sha256(b).hexdigest()
+    Blocks[h] = b
     return True
 
 # Given a list of blocks, return the subset that are on this server
 def hasblocks(client_hashlist):
     """Determines which blocks are on this server"""
     print("HasBlocks()")
+    #TODO: server_hashlist should be hashs from 1 file?
     server_hashlist = FileInfoMap.keys()
-    print(type(server_hashlist))
-    return 1
-    # list intersection_list = [value for value in client_hashlist if value in server_hashlist]
-    # return intersection_list
+    intersection_list = [value for value in client_hashlist if value in server_hashlist]
+    return intersection_list
 
 
 # Retrieves the server's FileInfoMap

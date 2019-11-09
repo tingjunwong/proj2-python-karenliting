@@ -2,6 +2,17 @@ import argparse
 import xmlrpc.client
 import os
 import hashlib
+
+
+def hasLocalUpdate(a, b):
+	diff = list(set(a) - set(b)) + list(set(b) - set(a))
+	if diff is not []:
+		return True
+	else:
+		return False
+
+
+
 if __name__ == "__main__":
 
 	parser = argparse.ArgumentParser(description="SurfStore client")
@@ -19,51 +30,67 @@ if __name__ == "__main__":
 		# Test ping
 		client.surfstore.ping()
 		print("Ping() successful")
+		# TODO: base directory does not exist?
 		# read index.txt
-		hashlist = []
-		if os.path.isfile(metadatapath):#if index.txt exist
-			with open(metadatapath) as f:
-				for line in f:
-					fileinfo = line.split()
-					filename = fileinfo[0]
-					version = fileinfo[1]
-					for i in range(2,len(fileinfo)):
-						hashlist.append(fileinfo[i])
-					print(":"+line.rstrip('\n'))
-				print("fileinfo:"+fileinfo)
-				print("version:"+version)
-				print("hashlist:")
-				print(hashlist)
-		        
-		else:#if not exist create
-			filelist = os.listdir(basedir)
-			f = open(metadatapath,"w+")
-			for file in filelist-"index.txt":
-				version = 1
-				f.write(file)
-				f.write(" "+version)
-				with open(basedir+"/"+file,"rb") as find:
-					block = find.read(blocksize)
-					hash_value = hashlib.sha256(block).hexdigest()
-					f.write(" "+hash_value)
-				
-				
+		
+		
+		index_filelist = []
+		add_filelist = []
+		nameToVersion = {}
+		nameTOHashs = {}
+		if not(os.path.isfile(metadatapath)):
+			open(metadatapath, "w+")
 
+		with open(metadatapath) as f:
+			for line in f:
+				fileinfo = line.split()
+				filename = fileinfo[0]
+				version = fileinfo[1]
+				index_filelist.append(filename)
+				nameToVersion[filename] = version
+				hashs = []
+				for i in range(2,len(fileinfo)):
+					hashs.append(fileinfo[i])
+				nameTOHashs[filename] = hashs
+		
 
-	except Exception as e:
-		print("Client: " + str(e))
-
+		base_filelist = os.listdir(basedir)
+		with open(metadatapath, "w") as f:
+			for file in base_filelist:
+				if file in index_filelist:
+					continue
+				elif file == "index.txt":
+					continue
+				else:
+					# TODO: write after calculate hash
+					f.write(file)
+					f.write(" 1")
+					f.write(" h1 h2 h3\n")
+					add_filelist.append(file)
 
 # 1. Local checkup
 	# 1.1 calculate hash on all files, is the file updated locally? 
-	
-	
-	# 1.2 if updated, update index.html
+		for filename in index_filelist:
+			file = open(args.basedir+"/"+filename, "rb")	#TODO: read binary
+			new_hashs = []
+			while True:
+				chunk = file.read(blocksize)
+				if not chunk:
+					break
+				h = hashlib.sha256(chunk).hexdigest()
+				new_hashs.append(h)
+			if hasLocalUpdate(new_hashs, nameTOHashs[filename]):
+				nameToVersion[filename] += 1		
+
+		for filename in add_filelist:
+			nameToVersion[filename] = 1
 
 
 # 2. Download FileInfoMap from server
+		server_nameToVersion = {}
+		server_nameToHashs = {}
 
-
+		server_nameToVersion, server_nameToHashs = client.surfstore.getfileinfomap()
 
 # 3. Update files
 	# 3.1 [DOWNLOAD] if((local_version < remote_version) || 
@@ -86,3 +113,7 @@ if __name__ == "__main__":
 		# [DELETE]
 		# 3.2.3 update remote FileInfoMap(set hash list to 0) 
 			# updateFile(filename, version, blocklist)
+
+
+	except Exception as e:
+		print("Client: " + str(e))
