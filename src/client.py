@@ -12,6 +12,7 @@ if __name__ == "__main__":
 
 	try:
 		metadatapath = args.basedir+"/index.txt"
+		basedir = args.basedir
 		hostport = args.hostport
 		blocksize = args.blocksize
 		client  = xmlrpc.client.ServerProxy('http://localhost:8080')
@@ -22,22 +23,31 @@ if __name__ == "__main__":
 		hashlist = []
 		if os.path.isfile(metadatapath):#if index.txt exist
 			with open(metadatapath) as f:
-		    for line in f:
-		    	fileinfo = line.split()
-		    	filename = fileinfo[0]
-		    	version = fileinfo[1]
-		    	for i in range(2,len(fileinfo)):
-		    		hashlist.append(fileinfo[i])
-
-		        print(":"+line.rstrip('\n'))
-		    print("fileinfo:"+fileinfo)
-		    print("version:"+version)
-		    print("hashlist:")
-		    print(hashlist)
+				for line in f:
+					fileinfo = line.split()
+					filename = fileinfo[0]
+					version = fileinfo[1]
+                                        for i in range(2,len(fileinfo)):
+                                            hashlist.append(fileinfo[i])
+		    		print(":"+line.rstrip('\n'))
+		    	print("fileinfo:"+fileinfo)
+		    	print("version:"+version)
+		    	print("hashlist:")
+		    	print(hashlist)
 		        
 		else:#if not exist create
-			f = open(metadatapath,"w+")
-			f.write("filename v h1")
+		    filelist = os.listdir(basedir)
+		    f = open(metadatapath,"w+")
+		    for file in filelist-"index.txt":
+                        version = 1
+			f.write(file)
+			f.write(" "+version)
+		    	with open(basedir+"/"+file,"rb") as find:
+                            block = find.read(blocksize)
+                            hash_value = hashlib.sha256(block).hexdigest()
+                            f.write(" "+hash_value)
+				
+				
 
 
 	except Exception as e:
