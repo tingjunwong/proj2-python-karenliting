@@ -3,7 +3,11 @@ from xmlrpc.server import SimpleXMLRPCRequestHandler
 from socketserver import ThreadingMixIn
 import hashlib
 
-FileInfoMap = dict()
+server_hashlist = []
+server_filelist = []
+nameToVersion = dict()
+nameToHashs = dict()
+
 Blocks = dict()
 
 class RequestHandler(SimpleXMLRPCRequestHandler):
@@ -31,14 +35,13 @@ def putblock(b):
     print("PutBlock()")
     h = hashlib.sha256(b).hexdigest()
     Blocks[h] = b
+    server_hashlist.append(h)
     return True
 
 # Given a list of blocks, return the subset that are on this server
 def hasblocks(client_hashlist):
     """Determines which blocks are on this server"""
     print("HasBlocks()")
-    #TODO: server_hashlist should be hashs from 1 file?
-    server_hashlist = FileInfoMap.keys()
     intersection_list = [value for value in client_hashlist if value in server_hashlist]
     return intersection_list
 
@@ -47,23 +50,7 @@ def hasblocks(client_hashlist):
 def getfileinfomap():
     """Gets the fileinfo map"""
     print("GetFileInfoMap()")
-
-    result = {}
-
-    # file1.dat
-    file1info = []
-    file1info.append(3) # version
-
-    file1blocks = []
-    file1blocks.append("h1")
-    file1blocks.append("h2")
-    file1blocks.append("h3")
-
-    file1info.append(file1blocks)
-    
-    result["file1.dat"] = file1info
-
-    return result
+    return nameToVersion, nameToHashs
 
 
 # Update a file's fileinfo entry
@@ -71,15 +58,8 @@ def updatefile(filename, version, hashlist):
     """Updates a file's fileinfo entry"""
     print("UpdateFile()")
 
-    # search filename
-    # if(version > 1)
-        # update version
-        # update hashlist
-
-    # else(version = 1)
-        # add to map with version 1
-        # update hashlist
-
+    nameToVersion[filename] = version
+    nameToHashs[filename] = hashlist
     return True
 
 

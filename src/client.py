@@ -2,9 +2,9 @@ import argparse
 import xmlrpc.client
 import os
 import hashlib
+import sys
 
-
-def hasLocalUpdate(a, b):
+def hasDiffHashs(a, b):
 	diff = list(set(a) - set(b)) + list(set(b) - set(a))
 	if diff is not []:
 		return True
@@ -36,8 +36,13 @@ if __name__ == "__main__":
 		
 		index_filelist = []
 		add_filelist = []
+		delete_filelist = []
 		nameToVersion = {}
-		nameTOHashs = {}
+		nameToHashs = {}
+
+		if not(os.path.isdir(basedir)):
+			os.mkdir(basedir)
+		
 		if not(os.path.isfile(metadatapath)):
 			open(metadatapath, "w+")
 
@@ -47,31 +52,49 @@ if __name__ == "__main__":
 				filename = fileinfo[0]
 				version = fileinfo[1]
 				index_filelist.append(filename)
-				nameToVersion[filename] = version
+				nameToVersion[filename] = int(version)
 				hashs = []
 				for i in range(2,len(fileinfo)):
 					hashs.append(fileinfo[i])
-				nameTOHashs[filename] = hashs
+				nameToHashs[filename] = hashs
 		
 
 		base_filelist = os.listdir(basedir)
+		if '.DS_Store' in base_filelist: 
+			base_filelist.remove('.DS_Store')
+		if 'index.txt' in base_filelist:
+			base_filelist.remove('index.txt')
 		with open(metadatapath, "w") as f:
 			for file in base_filelist:
 				if file in index_filelist:
 					continue
-				elif file == "index.txt":
-					continue
 				else:
 					# TODO: write after calculate hash
-					f.write(file)
-					f.write(" 1")
-					f.write(" h1 h2 h3\n")
 					add_filelist.append(file)
 
+
+
 # 1. Local checkup
-	# 1.1 calculate hash on all files, is the file updated locally? 
-		for filename in index_filelist:
-			file = open(args.basedir+"/"+filename, "rb")	#TODO: read binary
+	# 1.1 update index.txt temprorily
+
+		# files that i deleted
+		delete_filelist = list(set(index_filelist) - set(base_filelist))
+		for filename in delete_filelist:
+			nameToVersion[filename] += 1
+			nameToHashs[filename] = [0]
+
+		# files that i added
+		for filename in add_filelist:
+			nameToVersion[filename] = int(0)
+			nameToHashs[filename] = []
+		print("Add filelist  = {0}".format(add_filelist))
+		print("Base filelist  = {0}".format(base_filelist))
+
+		for filename in base_filelist:
+			print(nameToVersion)
+		# files that i updated or no modified
+		for filename in base_filelist:
+			file = open(args.basedir+"/"+filename, "rb")
 			new_hashs = []
 			while True:
 				chunk = file.read(blocksize)
@@ -79,11 +102,12 @@ if __name__ == "__main__":
 					break
 				h = hashlib.sha256(chunk).hexdigest()
 				new_hashs.append(h)
-			if hasLocalUpdate(new_hashs, nameTOHashs[filename]):
-				nameToVersion[filename] += 1		
+			if hasDiffHashs(new_hashs, nameToHashs[filename]):
+				nameToVersion[filename] += 1
+				nameToHashs[filename] = new_hashs
+		
 
-		for filename in add_filelist:
-			nameToVersion[filename] = 1
+		all_filelist = index_filelist + add_filelist
 
 
 # 2. Download FileInfoMap from server
@@ -92,28 +116,98 @@ if __name__ == "__main__":
 
 		server_nameToVersion, server_nameToHashs = client.surfstore.getfileinfomap()
 
-# 3. Update files
-	# 3.1 [DOWNLOAD] if((local_version < remote_version) || 
-	# 					((local_version = remote_version) & (local_hash != remote_hash)))
-		# 3.1.1 download file
 
-		# 3.1.2 update index.html
+
+
+
+# 3. Update files
+		server_filelist = server_nameToVersion.keys()
+		print("Server file: {0}".format(server_filelist))
+
+		download_filelist = list(set(server_filelist) - set(all_filelist))
+		for filename in download_filelist:
+			print("Download file: {0}".format(filename))
+			nameToVersion[filename] = server_nameToVersion[filename]
+			nameToHashs[filename] = server_nameToHashs[filename]
+			with open(args.basedir+"/"+filename, "w+") as f:
+				for h in client_hashs:
+					f.write(client.surfstore.get(h))
+
+		
+		for filename in add_filelist:
+			print("Add file: {0}".format(filename))
+			client_version = nameToVersion[filename]
+			client_hashs = nameToHashs[filename]
+			if filename not in server_filelist:
+				client.surfstore.updatefile(filename, client_version, client_hashs)
+				file = open(args.basedir+"/"+filename, "rb")
+				while True:
+					chunk = file.read(blocksize)
+					if not chunk:
+						break
+					h = hashlib.sha256(chunk).hexdigest()
+					success = client.surfstore.putblock(chunk)
+					print(success)
+			else:
+				if client_version <= server_nameToVersion[filename]:
+					nameToVersion[filename] = server_nameToVersion[filename]
+					nameToHashs[filename] = server_nameToHashs[filename]
+					with open(args.basedir+"/"+filename, "w") as f:
+						for h in client_hashs:
+							f.write(client.surfstore.getblock(h))
+
+
+
+
+		for filename in index_filelist:
+			print("Index file: {0}".format(filename))
+			client_version = nameToVersion[filename]
+			client_hashs = nameToHashs[filename]
+	# 3.1 [DOWNLOAD] if((local_version < remote_version) || 
+	# ((local_version = remote_version) & (local_hash != remote_hash)))					
+			if client_version < server_nameToVersion[filename]:
+				# 3.1.1 update index.html
+				nameToVersion[filename] = server_nameToVersion[filename]
+				nameToHashs[filename] = server_nameToHashs[filename]
+				# 3.1.2 download file
+				with open(args.basedir+"/"+filename, "w") as f:
+					for h in client_hashs:
+						f.write(client.surfstore.get(h))
+
+			if (client_version == server_nameToVersion[filename]) and hasDiffHashs(client_hashs, server_nameToHashs[filename]):
+				# 3.1.1 update index.html
+				nameToVersion[filename] = server_nameToVersion[filename]
+				nameToHashs[filename] = server_nameToHashs[filename]
+				# 3.1.2 download file
+				with open(args.basedir+"/"+filename, "w") as f:
+					for h in client_hashs:
+						f.write(client.surfstore.get(h))
 
 
 	# 3.2 [UPDATE]	if((local_version = remote_version + 1)
-		# [UPLOAD]
-		# 3.2.1 upload file
-			# putblock(hashlist[0~n])
+			if client_version > server_nameToVersion[filename]:
+				# [DELETE]
+				if client_hashs == [0]:
+					client.surfstore.updatefile(filename, client_version, client_hashs)
+				# [UPLOAD]
+				# 3.2.1 update remote FileInfoMap
+				else:
+					client.surfstore.updatefile(filename, client_version, client_hashs)
+				
+				# 3.2.2 upload file
+					upToDateHashs = client.surfstore.hasblocks(client_hashs)
+					file = open(args.basedir+"/"+filename, "rb")
+					while True:
+						chunk = file.read(blocksize)
+						if not chunk:
+							break
+						h = hashlib.sha256(chunk).hexdigest()
+						if h not in upToDateHashs:
+							client.surfstroe.putblock(chunk)
 
-
-		# 3.2.2 update remote FileInfoMap
-			# updateFile(filename, version, blocklist)
-
-
-		# [DELETE]
-		# 3.2.3 update remote FileInfoMap(set hash list to 0) 
-			# updateFile(filename, version, blocklist)
-
+		
 
 	except Exception as e:
+		print ('Error on line {}'.format(sys.exc_info()[-1].tb_lineno))
+		print("Unexpected error:", sys.exc_info()[0])
 		print("Client: " + str(e))
