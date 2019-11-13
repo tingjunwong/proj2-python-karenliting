@@ -6,7 +6,7 @@ import sys
 
 def hasDiffHashs(a, b):
 	diff = list(set(a) - set(b)) + list(set(b) - set(a))
-	if diff is not []:
+	if len(diff)!=0:
 		return True
 	else:
 		return False
@@ -164,6 +164,7 @@ if __name__ == "__main__":
 			client_version = nameToVersion[filename]
 			client_hashs = nameToHashs[filename]
 			if filename not in server_filelist:
+				print("[A] updatefile version{0}".format(client_version))
 				client.surfstore.updatefile(filename, client_version, client_hashs)
 				file = open("base/try.txt", "rb")
 				while True:
@@ -187,6 +188,7 @@ if __name__ == "__main__":
 		for filename in index_filelist:
 			client_version = nameToVersion[filename]
 			client_hashs = nameToHashs[filename]
+			print("cleint version = {0}  || server version = {1}".format(client_version, server_nameToVersion[filename]))
 			# 3.1 [DOWNLOAD] if((local_version < remote_version) || 
 			# ((local_version = remote_version) & (local_hash != remote_hash)))					
 			if (client_version < server_nameToVersion[filename]) or (client_version == server_nameToVersion[filename]) and hasDiffHashs(client_hashs, server_nameToHashs[filename]):
@@ -204,10 +206,12 @@ if __name__ == "__main__":
 			if client_version > server_nameToVersion[filename]:
 				# [DELETE]
 				if client_hashs == [0]:
+					print("[B] updatefile version{0}".format(client_version))
 					client.surfstore.updatefile(filename, client_version, client_hashs)
 				# [UPLOAD]
 				else:
 					# 3.2.1 update remote FileInfoMap
+					print("[C] updatefile version{0}".format(client_version))
 					client.surfstore.updatefile(filename, client_version, client_hashs)
 				
 					# 3.2.2 upload file
@@ -219,7 +223,7 @@ if __name__ == "__main__":
 							break
 						h = hashlib.sha256(chunk).hexdigest()
 						if h not in upToDateHashs:
-							client.surfstroe.putblock(chunk)
+							client.surfstore.putblock(h, chunk)
 
 		for file in all_filelist:
 			with open(metadatapath, "w+") as f:

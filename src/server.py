@@ -33,7 +33,6 @@ def getblock(h):
 def putblock(h, b):
     """Puts a block"""
     print("PutBlock()")
-    print(type(b))
     # h = hashlib.sha256(b.data()).hexdigest()
     print(h)
     Blocks[h] = b
@@ -64,10 +63,12 @@ def updatefile(filename, version, hashlist):
     print("UpdateFile()")
     nameToVersion[filename] = version
     nameToHashs[filename] = hashlist
-
+    if(version==1):
+        server_filelist.append(filename)
     for f in server_filelist:
-        print("file : {0} {1}".format(nameToVersion[f], nameToVersion[f]))
-        print(nameToHashs[f])
+        print("======== file : {0} ========".format(f))
+        print("Version : {0}".format(nameToVersion[f]))
+        print("Hashs : {0}".format(nameToHashs[f]))
     return True
 
 
