@@ -31,6 +31,9 @@ if __name__ == "__main__":
 		client.surfstore.ping()
 		print("Ping() successful")
 		
+		if basedir[0]=="/":
+			basedir = basedir[1:]
+			metadatapath = basedir + "/index.txt"
 		
 		index_filelist = []
 		add_filelist = []
@@ -87,16 +90,15 @@ if __name__ == "__main__":
 # 1. Local checkup
 	# 1.1 update info temprorily
 		# files that I deleted/added/updated
-		for filename in base_filelist:
+		for filename in delete_filelist:
+			nameToVersion[filename] += 1
+			nameToHashs[filename] = [0]	
+			print("******************* {0}".format(nameToHashs[filename]))
 
-			if filename in delete_filelist:
-				nameToVersion[filename] += 1
-				nameToHashs[filename] = [0]	
-				continue
-			
-			elif filename in add_filelist:
+		for filename in base_filelist:
+			if filename in add_filelist:
 				nameToVersion[filename] = 1
-				file = open("base/try.txt", "rb")
+				file = open(basedir+"/"+filename, "rb")
 				new_hashs = []
 				print("chunking add files")
 				while True:
@@ -112,7 +114,7 @@ if __name__ == "__main__":
 				continue
 
 			else:
-				file = open(args.basedir+"/"+filename, "rb")
+				file = open(basedir+"/"+filename, "rb")
 				new_hashs = []
 				while True:
 					print("chunking index file")
@@ -154,29 +156,30 @@ if __name__ == "__main__":
 			print("Download file: {0}".format(filename))
 			nameToVersion[filename] = server_nameToVersion[filename]
 			nameToHashs[filename] = server_nameToHashs[filename]
-			with open(args.basedir+"/"+filename, "w+") as f:
+			with open(basedir+"/"+filename, "w+") as f:
 				for h in nameToHashs[filename]:
 					f.write(client.surfstore.get(h))
 
 		#[UPLOAD files that were never in the server]
 		for filename in add_filelist:
-			print("Add file: {0}".format(filename))
+			print("===== Add file: {0} =====".format(filename))
 			client_version = nameToVersion[filename]
 			client_hashs = nameToHashs[filename]
 			if filename not in server_filelist:
-				print("[A] updatefile version{0}".format(client_version))
+				print("ACTUAL ADDING")
+				print("version {0}".format(client_version))
+				print("hashs {0}".format(client_hashs))
 				client.surfstore.updatefile(filename, client_version, client_hashs)
-				file = open("base/try.txt", "rb")
+				file = open(basedir+"/"+filename, "rb")
 				while True:
 					chunk = file.read(blocksize)
 					if not chunk:
 						break
 					else:
-						print(type(chunk))
 						h = hashlib.sha256(chunk).hexdigest()
 						success = client.surfstore.putblock(h, chunk)
-						print("putblock {0}".format(success))
 			else:
+				print("DOWNLOADING instead of adding")
 				if client_version <= server_nameToVersion[filename]:
 					nameToVersion[filename] = server_nameToVersion[filename]
 					nameToHashs[filename] = server_nameToHashs[filename]
@@ -188,16 +191,20 @@ if __name__ == "__main__":
 		for filename in index_filelist:
 			client_version = nameToVersion[filename]
 			client_hashs = nameToHashs[filename]
+			print("===== Compare File: {0} =====".format(filename))
 			print("cleint version = {0}  || server version = {1}".format(client_version, server_nameToVersion[filename]))
 			# 3.1 [DOWNLOAD] if((local_version < remote_version) || 
 			# ((local_version = remote_version) & (local_hash != remote_hash)))					
 			if (client_version < server_nameToVersion[filename]) or (client_version == server_nameToVersion[filename]) and hasDiffHashs(client_hashs, server_nameToHashs[filename]):
 				# 3.1.1 update index.html
+				print("DOWNLOAD")
+				print("version {0}".format(client_version))
+				print("hashs {0}".format(client_hashs))
 				nameToVersion[filename] = server_nameToVersion[filename]
 				nameToHashs[filename] = server_nameToHashs[filename]
 				client_hashs = nameToHashs[filename]
 				# 3.1.2 download file
-				with open(args.basedir+"/"+filename, "w") as f:
+				with open(basedir+"/"+filename, "w") as f:
 					for h in client_hashs:
 						f.write(client.surfstore.get(h))
 
@@ -206,17 +213,21 @@ if __name__ == "__main__":
 			if client_version > server_nameToVersion[filename]:
 				# [DELETE]
 				if client_hashs == [0]:
-					print("[B] updatefile version{0}".format(client_version))
+					print("DELETE")
+					print("version {0}".format(client_version))
+					print("hashs {0}".format(client_hashs))
 					client.surfstore.updatefile(filename, client_version, client_hashs)
 				# [UPLOAD]
 				else:
 					# 3.2.1 update remote FileInfoMap
-					print("[C] updatefile version{0}".format(client_version))
+					print("UPLOAD")
+					print("version {0}".format(client_version))
+					print("hashs {0}".format(client_hashs))
 					client.surfstore.updatefile(filename, client_version, client_hashs)
 				
 					# 3.2.2 upload file
 					upToDateHashs = client.surfstore.hasblocks(client_hashs)
-					file = open(args.basedir+"/"+filename, "rb")
+					file = open(basedir+"/"+filename, "rb")
 					while True:
 						chunk = file.read(blocksize)
 						if not chunk:
@@ -225,14 +236,14 @@ if __name__ == "__main__":
 						if h not in upToDateHashs:
 							client.surfstore.putblock(h, chunk)
 
-		for file in all_filelist:
-			with open(metadatapath, "w+") as f:
+		with open(metadatapath, "w+") as f:
+			for file in all_filelist:
 				f.write(file+" "+str(nameToVersion[file]))
 				print("num of hashs = {0}".format(len(nameToHashs[file])))
 				for h in nameToHashs[file]:
 					f.write(" "+(str(h)))
-			f.close()
-
+				f.write("\n")
+		f.close()
 
 	except Exception as e:
 		print ('Error on line {}'.format(sys.exc_info()[-1].tb_lineno))
