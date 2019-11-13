@@ -30,10 +30,12 @@ def getblock(h):
     return blockData
 
 # Puts a block
-def putblock(b):
+def putblock(h, b):
     """Puts a block"""
     print("PutBlock()")
-    h = hashlib.sha256(b).hexdigest()
+    print(type(b))
+    # h = hashlib.sha256(b.data()).hexdigest()
+    print(h)
     Blocks[h] = b
     server_hashlist.append(h)
     return True
@@ -50,6 +52,9 @@ def hasblocks(client_hashlist):
 def getfileinfomap():
     """Gets the fileinfo map"""
     print("GetFileInfoMap()")
+    for f in server_filelist:
+        print("file : {0} {1}".format(nameToVersion[f], nameToVersion[f]))
+        print(nameToHashs[f])
     return nameToVersion, nameToHashs
 
 
@@ -57,9 +62,12 @@ def getfileinfomap():
 def updatefile(filename, version, hashlist):
     """Updates a file's fileinfo entry"""
     print("UpdateFile()")
-
     nameToVersion[filename] = version
     nameToHashs[filename] = hashlist
+
+    for f in server_filelist:
+        print("file : {0} {1}".format(nameToVersion[f], nameToVersion[f]))
+        print(nameToHashs[f])
     return True
 
 
