@@ -4,7 +4,6 @@ from socketserver import ThreadingMixIn
 import hashlib
 
 server_hashlist = []
-server_filelist = []
 nameToVersion = dict()
 nameToHashs = dict()
 
@@ -33,8 +32,8 @@ def getblock(h):
 def putblock(h, b):
     """Puts a block"""
     print("PutBlock()")
-    # h = hashlib.sha256(b.data()).hexdigest()
     print(h)
+    print(b)
     Blocks[h] = b
     server_hashlist.append(h)
     return True
@@ -51,9 +50,11 @@ def hasblocks(client_hashlist):
 def getfileinfomap():
     """Gets the fileinfo map"""
     print("GetFileInfoMap()")
-    for f in server_filelist:
-        print("file : {0} {1}".format(nameToVersion[f], nameToVersion[f]))
-        print(nameToHashs[f])
+    print("======== FILEMAP ========")
+    for f in nameToVersion.keys():
+        print("===== File : {0} =====".format(f))
+        print("Version : {0}".format(nameToVersion[f]))
+        print("Hashs : {0}".format(nameToHashs[f]))
     return nameToVersion, nameToHashs
 
 
@@ -63,12 +64,10 @@ def updatefile(filename, version, hashlist):
     print("UpdateFile()")
     nameToVersion[filename] = version
     nameToHashs[filename] = hashlist
-    if(version==1):
-        server_filelist.append(filename)
-    for f in server_filelist:
-        print("======== file : {0} ========".format(f))
-        print("Version : {0}".format(nameToVersion[f]))
-        print("Hashs : {0}".format(nameToHashs[f]))
+
+    print("===== Update File : {0} =====".format(filename))
+    print("Version : {0}".format(nameToVersion[filename]))
+    print("Hashs : {0}".format(nameToHashs[filename]))
     return True
 
 

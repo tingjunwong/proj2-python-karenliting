@@ -59,7 +59,7 @@ if __name__ == "__main__":
 				index_filelist.append(filename)
 				nameToVersion[filename] = int(version)
 				hashs = []
-				for i in range(2,len(fileinfo)):
+				for i in range(2, len(fileinfo)):
 					hashs.append(fileinfo[i])
 				nameToHashs[filename] = hashs
 		
@@ -75,9 +75,11 @@ if __name__ == "__main__":
 
 
 		# Find files that client deleted		[delete_filelist] : files in index.txt but not in base directory
-		delete_filelist = list(set(index_filelist) - set(base_filelist))
-	
-	
+		delete_filelist_ = list(set(index_filelist) - set(base_filelist))
+		for filename in delete_filelist_:
+			if nameToHashs[filename] != ['0']:
+				delete_filelist.append(filename)
+
 		#										[all_filelist] : all files locally, even the deleted ones
 		all_filelist = index_filelist + add_filelist
 
@@ -92,8 +94,8 @@ if __name__ == "__main__":
 		# files that I deleted/added/updated
 		for filename in delete_filelist:
 			nameToVersion[filename] += 1
-			nameToHashs[filename] = [0]	
-			print("******************* {0}".format(nameToHashs[filename]))
+			nameToHashs[filename] = ['0']	
+			print("D", nameToHashs[filename])
 
 		for filename in base_filelist:
 			if filename in add_filelist:
@@ -137,13 +139,11 @@ if __name__ == "__main__":
 		server_nameToHashs = {}
 		server_nameToVersion, server_nameToHashs = client.surfstore.getfileinfomap()
 
-
 		#										[server_filelist] : files that have info on server
 		server_filelist = server_nameToVersion.keys()
 
 		#										[download_filelist] : files that are on the server but not locally
 		download_filelist = list(set(server_filelist) - set(all_filelist))
-		
 		
 		print("Server file		= {0}".format(server_filelist))
 		print("Download file	= {0}".format(download_filelist))
@@ -158,7 +158,7 @@ if __name__ == "__main__":
 			nameToHashs[filename] = server_nameToHashs[filename]
 			with open(basedir+"/"+filename, "w+") as f:
 				for h in nameToHashs[filename]:
-					f.write(client.surfstore.get(h))
+					f.write(client.surfstore.getblock(h))
 
 		#[UPLOAD files that were never in the server]
 		for filename in add_filelist:
@@ -212,7 +212,7 @@ if __name__ == "__main__":
 			# 3.2 [UPDATE]	if((local_version = remote_version + 1)
 			if client_version > server_nameToVersion[filename]:
 				# [DELETE]
-				if client_hashs == [0]:
+				if client_hashs == ['0']:
 					print("DELETE")
 					print("version {0}".format(client_version))
 					print("hashs {0}".format(client_hashs))
@@ -239,7 +239,6 @@ if __name__ == "__main__":
 		with open(metadatapath, "w+") as f:
 			for file in all_filelist:
 				f.write(file+" "+str(nameToVersion[file]))
-				print("num of hashs = {0}".format(len(nameToHashs[file])))
 				for h in nameToHashs[file]:
 					f.write(" "+(str(h)))
 				f.write("\n")
