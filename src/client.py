@@ -47,7 +47,8 @@ if __name__ == "__main__":
 		
 		if not(os.path.isfile(metadatapath)):
 			print("Make index.txt")
-			open(metadatapath, "w+")
+			f = open(metadatapath, "w")
+			f.close()
 
 # 0. List all files
 		# Read index.txt						[index_filelist] : files listed in index.txt
@@ -156,10 +157,10 @@ if __name__ == "__main__":
 			print("Download file: {0}".format(filename))
 			nameToVersion[filename] = server_nameToVersion[filename]
 			nameToHashs[filename] = server_nameToHashs[filename]
-			with open(basedir+"/"+filename, "w+") as f:
+			with open(basedir+"/"+filename, "wb") as f:
 				for h in nameToHashs[filename]:
 					data = client.surfstore.getblock(h)
-					f.write(str(data))
+					f.write(data.data)
 
 		#[UPLOAD files that were never in the server]
 		for filename in add_filelist:
@@ -184,9 +185,10 @@ if __name__ == "__main__":
 				if client_version <= server_nameToVersion[filename]:
 					nameToVersion[filename] = server_nameToVersion[filename]
 					nameToHashs[filename] = server_nameToHashs[filename]
-					with open(args.basedir+"/"+filename, "w") as f:
+					with open(basedir+"/"+filename, "wb") as f:
 						for h in nameToHashs[filename]:
-							f.write(str(client.surfstore.getblock(h)))
+							data = client.surfstore.getblock(h)
+							f.write(data.data)
 
 
 		for filename in index_filelist:
@@ -209,9 +211,10 @@ if __name__ == "__main__":
 					os.remove(basedir+"/"+filename)
 				# 3.1.2 download file
 				else:
-					with open(basedir+"/"+filename, "w") as f:
+					with open(basedir+"/"+filename, "wb") as f:
 						for h in client_hashs:
-							f.write(str(client.surfstore.getblock(h)))
+							data = client.surfstore.getblock(h)
+							f.write(data.data)
 
 
 			# 3.2 [UPDATE]	if((local_version = remote_version + 1)
@@ -241,7 +244,7 @@ if __name__ == "__main__":
 						if h not in upToDateHashs:
 							client.surfstore.putblock(h, chunk)
 
-		with open(metadatapath, "w+") as f:
+		with open(metadatapath, "w") as f:
 			for file in all_filelist:
 				f.write(file+" "+str(nameToVersion[file]))
 				for h in nameToHashs[file]:
