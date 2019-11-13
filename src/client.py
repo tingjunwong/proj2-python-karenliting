@@ -158,7 +158,10 @@ if __name__ == "__main__":
 			nameToHashs[filename] = server_nameToHashs[filename]
 			with open(basedir+"/"+filename, "w+") as f:
 				for h in nameToHashs[filename]:
-					f.write(client.surfstore.getblock(h))
+					print("type of h: ", type(h))
+					data = client.surfstore.getblock(h)
+					print("Type of data : ", type(data))
+					f.write(str(data))
 
 		#[UPLOAD files that were never in the server]
 		for filename in add_filelist:
@@ -185,7 +188,7 @@ if __name__ == "__main__":
 					nameToHashs[filename] = server_nameToHashs[filename]
 					with open(args.basedir+"/"+filename, "w") as f:
 						for h in nameToHashs[filename]:
-							f.write(client.surfstore.getblock(h))
+							f.write(str(client.surfstore.getblock(h)))
 
 
 		for filename in index_filelist:
@@ -203,10 +206,14 @@ if __name__ == "__main__":
 				nameToVersion[filename] = server_nameToVersion[filename]
 				nameToHashs[filename] = server_nameToHashs[filename]
 				client_hashs = nameToHashs[filename]
+				# file got deleted
+				if client_hashs == ['0']:
+					os.remove(basedir+"/"+filename)
 				# 3.1.2 download file
-				with open(basedir+"/"+filename, "w") as f:
-					for h in client_hashs:
-						f.write(client.surfstore.get(h))
+				else:
+					with open(basedir+"/"+filename, "w") as f:
+						for h in client_hashs:
+							f.write(str(client.surfstore.getblock(h)))
 
 
 			# 3.2 [UPDATE]	if((local_version = remote_version + 1)
@@ -238,6 +245,11 @@ if __name__ == "__main__":
 
 		with open(metadatapath, "w+") as f:
 			for file in all_filelist:
+				f.write(file+" "+str(nameToVersion[file]))
+				for h in nameToHashs[file]:
+					f.write(" "+(str(h)))
+				f.write("\n")
+			for file in download_filelist:
 				f.write(file+" "+str(nameToVersion[file]))
 				for h in nameToHashs[file]:
 					f.write(" "+(str(h)))

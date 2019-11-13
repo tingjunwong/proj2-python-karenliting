@@ -24,8 +24,9 @@ def ping():
 # Gets a block, given a specific hash value
 def getblock(h):
     """Gets a block"""
-    print("GetBlock(" + h + ")")
+    print(h)
     blockData = Blocks[h]
+    print(blockData)
     return blockData
 
 # Puts a block
@@ -34,6 +35,7 @@ def putblock(h, b):
     print("PutBlock()")
     print(h)
     print(b)
+    print(type(b))
     Blocks[h] = b
     server_hashlist.append(h)
     return True
