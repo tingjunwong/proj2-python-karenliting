@@ -31,9 +31,9 @@ if __name__ == "__main__":
 		client.surfstore.ping()
 		print("Ping() successful")
 		
-		if basedir[0]=="/":
-			basedir = basedir[1:]
-			metadatapath = basedir + "/index.txt"
+		#if basedir[0]=="/":
+		#	basedir = basedir[1:]
+		#	metadatapath = basedir + "/index.txt"
 		
 		index_filelist = []
 		add_filelist = []
@@ -42,9 +42,8 @@ if __name__ == "__main__":
 		nameToHashs = {}
 
 		if not(os.path.isdir(basedir)):
-			print("Make base directory")
+			print("Make base directory", basedir)
 			os.mkdir(basedir)
-		
 		if not(os.path.isfile(metadatapath)):
 			print("Make index.txt")
 			f = open(metadatapath, "w")
