@@ -26,7 +26,7 @@ if __name__ == "__main__":
 		basedir = args.basedir
 		hostport = args.hostport
 		blocksize = args.blocksize
-		client  = xmlrpc.client.ServerProxy('http://localhost:8080')
+		client  = xmlrpc.client.ServerProxy(hostport)
 		# Test ping
 		client.surfstore.ping()
 		print("Ping() successful")
@@ -158,9 +158,7 @@ if __name__ == "__main__":
 			nameToHashs[filename] = server_nameToHashs[filename]
 			with open(basedir+"/"+filename, "w+") as f:
 				for h in nameToHashs[filename]:
-					print("type of h: ", type(h))
 					data = client.surfstore.getblock(h)
-					print("Type of data : ", type(data))
 					f.write(str(data))
 
 		#[UPLOAD files that were never in the server]
