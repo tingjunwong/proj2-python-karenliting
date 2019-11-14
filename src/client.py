@@ -26,7 +26,7 @@ if __name__ == "__main__":
 		basedir = args.basedir
 		hostport = args.hostport
 		blocksize = args.blocksize
-		client  = xmlrpc.client.ServerProxy(hostport)
+		client  = xmlrpc.client.ServerProxy("http://localhost:8080")
 		# Test ping
 		client.surfstore.ping()
 		print("Ping() successful")
